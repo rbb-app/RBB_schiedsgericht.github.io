@@ -21,20 +21,15 @@ body{
   padding:10px;
   background:var(--bg);
   color:var(--fg);
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
 }
+h2,h3{text-align:center;}
 input,select,button{
   padding:6px;
   font-size:15px;
-  margin:3px;
+  margin:4px;
 }
-input[type=number]{
-  text-align:center;
-}
-h2,h3{text-align:center;}
-button{cursor:pointer;}
+input[type=number]{ text-align:center; }
+button{ cursor:pointer; }
 
 .container{display:flex;gap:10px;flex-wrap:wrap;}
 .team{
@@ -42,13 +37,13 @@ button{cursor:pointer;}
   background:var(--card);
   border-radius:10px;
   padding:10px;
-  min-width:140px;
+  min-width:150px;
   transition: background 0.3s;
 }
 .team.ok-bg{ background: rgba(76,175,80,0.15); }
 .team.fail-bg{ background: rgba(244,67,54,0.15); }
 
-.players{display:flex;flex-wrap:wrap;gap:6px;}
+.players{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;}
 .player{
   padding:10px;
   border:3px solid #666;
@@ -57,13 +52,11 @@ button{cursor:pointer;}
   text-align:center;
   cursor:pointer;
   position:relative;
-  transition: background 0.2s, transform 0.1s;
 }
 .player.active{
   background: rgba(0,255,0,0.25);
-  transform: scale(1.03);
 }
-.player span.remove{
+.player .remove{
   position:absolute;
   top:2px;
   right:4px;
@@ -71,6 +64,7 @@ button{cursor:pointer;}
   font-weight:bold;
   cursor:pointer;
 }
+
 .status{
   text-align:center;
   font-weight:bold;
@@ -94,15 +88,10 @@ button{cursor:pointer;}
   user-select:none;
   min-width:70px;
   text-align:center;
-  transition: background 0.2s, transform 0.1s;
-  touch-action: manipulation;
 }
 .periods div.active{
   background:#4caf50;
   color:#fff;
-}
-.periods div:active{
-  transform: scale(0.95);
 }
 
 .input-row{
@@ -118,6 +107,10 @@ button{cursor:pointer;}
   text-align:center;
   text-align-last:center;
 }
+.setup-line{
+  text-align:center;
+  margin-bottom:6px;
+}
 </style>
 </head>
 
@@ -129,21 +122,33 @@ button{cursor:pointer;}
 <div id="setupView">
 
 <h3>Spiel-Setup</h3>
-<div style="text-align:center;">
-Heim: <input id="nameHeim">
-Gast: <input id="nameGast"><br>
-<button onclick="startGame()">Spiel starten</button>
+<div class="setup-line">Heim: <input id="nameHeim"></div>
+<div class="setup-line">Gast: <input id="nameGast"></div>
+
+<div style="text-align:center;margin-top:10px;">
+  <button onclick="startGame()">Spiel starten</button>
 </div>
 
 <h3>Spieler anlegen</h3>
 <div class="input-row">
-Nr: <input id="num" type="number" autocomplete="off">
+Nr: <input id="num" type="number">
 Pkt: <input id="pts" type="number" step="0.5" min="-0.5" max="4.5">
 <select id="teamSelect">
   <option value="heim">Heim</option>
   <option value="gast">Gast</option>
 </select>
 <button onclick="addPlayer()">+</button>
+</div>
+
+<div class="container">
+  <div class="team">
+    <h3 id="heimTitleSetup"></h3>
+    <div id="heimPlayersSetup" class="players"></div>
+  </div>
+  <div class="team">
+    <h3 id="gastTitleSetup"></h3>
+    <div id="gastPlayersSetup" class="players"></div>
+  </div>
 </div>
 
 </div>
@@ -180,32 +185,30 @@ Pkt: <input id="pts" type="number" step="0.5" min="-0.5" max="4.5">
 </div>
 
 <script>
-let players = [];
-let active = { heim:[], gast:[] };
-let log = [];
-let currentPeriod = "1";
-let gameStarted = false;
+let players=[];
+let active={heim:[],gast:[]};
+let log=[];
+let currentPeriod="1";
+let gameStarted=false;
 
-const setupView = document.getElementById("setupView");
-const gameView = document.getElementById("gameView");
-const periodsDiv = document.getElementById("periods");
+const setupView=document.getElementById("setupView");
+const gameView=document.getElementById("gameView");
+const periodsDiv=document.getElementById("periods");
 
 function vibrate(ms=20){
   if(navigator.vibrate) navigator.vibrate(ms);
 }
 
 function setPeriod(p){
-  currentPeriod = p;
+  currentPeriod=p;
   renderPeriods();
   vibrate(15);
 }
-
 function renderPeriods(){
   [...periodsDiv.children].forEach(d=>{
-    d.classList.toggle("active", d.dataset.period===currentPeriod);
+    d.classList.toggle("active",d.dataset.period===currentPeriod);
   });
 }
-
 [...periodsDiv.children].forEach(d=>{
   d.onclick=()=>setPeriod(d.dataset.period);
 });
@@ -221,7 +224,6 @@ function startGame(){
 
 function endGame(){
   if(!confirm("Spiel wirklich beenden?")) return;
-
   let csv="Zeit;Periode;Team;Spieler;Punkte\n";
   log.forEach(l=>{
     csv+=`${l.time};${l.period};${l.team};${l.lineup.join(",")};${l.points}\n`;
@@ -250,6 +252,13 @@ function addPlayer(){
   render();
 }
 
+function removePlayer(num,team){
+  players=players.filter(p=>!(p.num===num && p.team===team));
+  active[team]=active[team].filter(n=>n!==num);
+  vibrate(30);
+  render();
+}
+
 function toggle(team,num){
   const l=active[team];
   const i=l.indexOf(num);
@@ -273,30 +282,42 @@ function logChange(team){
   });
 }
 
+function renderPlayers(team,target,isSetup){
+  const div=document.getElementById(target);
+  div.innerHTML="";
+  players.filter(p=>p.team===team).forEach(p=>{
+    const el=document.createElement("div");
+    el.className="player";
+    el.innerHTML=`<strong>#${p.num}</strong><br>${p.pts.toFixed(1)}`;
+    if(isSetup){
+      el.innerHTML+=`<span class="remove" onclick="removePlayer(${p.num},'${team}')">×</span>`;
+    }else{
+      if(active[team].includes(p.num)) el.classList.add("active");
+      el.onclick=()=>toggle(team,p.num);
+    }
+    div.appendChild(el);
+  });
+}
+
 function render(){
   heimTitle.textContent=nameHeim.value||"Heim";
   gastTitle.textContent=nameGast.value||"Gast";
+  heimTitleSetup.textContent=nameHeim.value||"Heim";
+  gastTitleSetup.textContent=nameGast.value||"Gast";
+
   renderPeriods();
+  renderPlayers("heim","heimPlayersSetup",true);
+  renderPlayers("gast","gastPlayersSetup",true);
+  renderPlayers("heim","heimPlayers",false);
+  renderPlayers("gast","gastPlayers",false);
 
   ["heim","gast"].forEach(team=>{
-    const div=document.getElementById(team+"Players");
-    div.innerHTML="";
-    players.filter(p=>p.team===team).forEach(p=>{
-      const el=document.createElement("div");
-      el.className="player";
-      el.innerHTML=`<strong>#${p.num}</strong><br>${p.pts.toFixed(1)}`;
-      if(active[team].includes(p.num)) el.classList.add("active");
-      el.onclick=()=>toggle(team,p.num);
-      div.appendChild(el);
-    });
-
     const sum=active[team].map(n=>players.find(p=>p.num==n)?.pts||0)
       .reduce((a,b)=>a+b,0);
-
     const st=document.getElementById(team+"Status");
+    if(!st) return;
     st.textContent="Punkte: "+sum.toFixed(1);
     st.className="status "+(sum<=14.5?"ok":"fail");
-
     const tdiv=st.closest(".team");
     tdiv.classList.remove("ok-bg","fail-bg");
     tdiv.classList.add(sum<=14.5?"ok-bg":"fail-bg");
