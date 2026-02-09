@@ -55,9 +55,7 @@ button{ cursor:pointer; }
 .player.active{ background: rgba(0,255,0,0.25); }
 .player .remove{ position:absolute; top:2px; right:4px; color:red; font-weight:bold; cursor:pointer; }
 
-.player .bonus {
-  position: absolute; font-size:0.7em; font-weight:bold; padding:1px 4px; border-radius:4px; pointer-events:none;
-}
+.player .bonus { position: absolute; font-size:0.7em; font-weight:bold; padding:1px 4px; border-radius:4px; pointer-events:none; }
 .player .bonus.fb { top:2px; left:2px; background:#e91e63; color:#fff; }
 .player .bonus.jb { bottom:2px; left:2px; background:#4caf50; color:#fff; }
 
@@ -65,7 +63,15 @@ button{ cursor:pointer; }
 .ok{color:#4caf50;} .fail{color:#f44336;}
 
 .periods{ display:flex; gap:4px; justify-content:center; margin-top:0; margin-bottom:6px; flex-wrap:nowrap; }
-#gameView { padding-top:60px; } /* Abstand von Statusbar */
+.periods div{
+  padding:6px 10px; border-radius:6px; border:1px solid #666; cursor:pointer;
+  min-width:40px; text-align:center; background:#f2f2f2; color:#000; user-select:none;
+  transition: background 0.2s, color 0.2s, transform 0.1s;
+}
+.periods div.active{ background:#4caf50; color:#fff; }
+.periods div:active{ transform: scale(0.95); }
+
+#gameView { padding-top:60px; } /* Abstand Statusbar */
 
 .setup-line{ text-align:center; margin-bottom:6px; }
 </style>
