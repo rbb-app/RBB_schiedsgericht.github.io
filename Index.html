@@ -5,14 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>RBB Schiedsgericht Punkte</title>
 
-<!-- Vollbild für iOS -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-<!-- App-Icon (optional, erst später hochladen) -->
 <link rel="apple-touch-icon" href="icon.png">
-
-<!-- Manifest für PWA -->
 <link rel="manifest" href="manifest.json">
 
 <style>
@@ -33,16 +28,20 @@ body{
 input,select,button{padding:6px;font-size:15px;margin:3px;}
 h2,h3{text-align:center;}
 .container{display:flex;gap:10px;flex-wrap:wrap;}
-.team{flex:1;background:var(--card);border-radius:10px;padding:10px;min-width:140px;}
+.team{flex:1;border-radius:10px;padding:10px;min-width:140px;transition: background 0.3s;}
 .players{display:flex;flex-wrap:wrap;gap:6px;}
 .player{
   padding:10px;border:3px solid #666;border-radius:10px;
-  min-width:60px;text-align:center;cursor:pointer;
+  min-width:60px;text-align:center;cursor:pointer;position:relative;
 }
 .player.active{background:rgba(0,255,0,.15);}
+.player span.remove{
+  position:absolute; top:2px; right:4px; color:red; font-weight:bold; cursor:pointer;
+}
 .status{text-align:center;font-weight:bold;margin-top:6px;}
-.ok{color:#4caf50;} .fail{color:#f44336;}
 button{cursor:pointer;}
+.color-selects{margin-top:10px; display:flex; gap:20px; max-width:300px; justify-content:center; flex-wrap:wrap;}
+.color-selects label{display:flex; align-items:center; gap:5px;}
 </style>
 </head>
 
@@ -51,9 +50,9 @@ button{cursor:pointer;}
 <h2>Rollstuhlbasketball – Schiedsgericht</h2>
 
 <h3>Spiel-Setup</h3>
+<div style="text-align:center;">
 Heim: <input id="nameHeim">
 Gast: <input id="nameGast"><br>
-
 Periode:
 <select id="period">
   <option>1. Viertel</option>
@@ -61,10 +60,10 @@ Periode:
   <option>3. Viertel</option>
   <option>4. Viertel</option>
   <option>Verlängerung</option>
-</select>
-
+</select><br>
 <button onclick="startGame()">Spiel starten</button>
 <button onclick="downloadLog()">Download Wechselhistorie</button>
+</div>
 
 <h3>Spieler anlegen</h3>
 Nr: <input id="num" type="number">
@@ -75,6 +74,11 @@ Team:
   <option value="gast">Gast</option>
 </select>
 <button onclick="addPlayer()">+</button>
+
+<div class="color-selects">
+  <label>Heim Farbe: <input type="color" id="heimColor" value="#f2f2f2"></label>
+  <label>Gast Farbe: <input type="color" id="gastColor" value="#f2f2f2"></label>
+</div>
 
 <div class="container">
 
@@ -99,9 +103,21 @@ let log = JSON.parse(localStorage.getItem("log")) || [];
 
 const nameHeim = document.getElementById("nameHeim");
 const nameGast = document.getElementById("nameGast");
+const heimColorInput = document.getElementById("heimColor");
+const gastColorInput = document.getElementById("gastColor");
 
 nameHeim.value = localStorage.getItem("nameHeim") || "Heim";
 nameGast.value = localStorage.getItem("nameGast") || "Gast";
+heimColorInput.value = localStorage.getItem("heimColor") || "#f2f2f2";
+gastColorInput.value = localStorage.getItem("gastColor") || "#f2f2f2";
+
+heimColorInput.oninput = () => { saveColors(); render(); };
+gastColorInput.oninput = () => { saveColors(); render(); };
+
+function saveColors(){
+  localStorage.setItem("heimColor", heimColorInput.value);
+  localStorage.setItem("gastColor", gastColorInput.value);
+}
 
 function save(){
   localStorage.setItem("players", JSON.stringify(players));
@@ -109,6 +125,7 @@ function save(){
   localStorage.setItem("log", JSON.stringify(log));
   localStorage.setItem("nameHeim", nameHeim.value);
   localStorage.setItem("nameGast", nameGast.value);
+  saveColors();
 }
 
 function startGame(){
@@ -116,6 +133,9 @@ function startGame(){
 }
 
 function addPlayer(){
+  const num = document.getElementById("num");
+  const pts = document.getElementById("pts");
+  const teamSelect = document.getElementById("teamSelect");
   if(!num.value || !pts.value) return;
   players.push({
     num: num.value,
@@ -124,6 +144,7 @@ function addPlayer(){
   });
   players.sort((a,b)=>a.num-b.num);
   save(); render();
+  num.value=""; pts.value="";
 }
 
 function toggle(team, num){
@@ -133,6 +154,12 @@ function toggle(team, num){
   else if(list.length < 5) list.push(num);
 
   logChange(team);
+  save(); render();
+}
+
+function removePlayer(num, team){
+  players = players.filter(p => !(p.num==num && p.team===team));
+  active[team] = active[team].filter(n => n!=num);
   save(); render();
 }
 
@@ -151,26 +178,44 @@ function logChange(team){
   });
 }
 
+function blendColors(hex, overlayHex, factor){
+  // einfache lineare Mischung zwischen zwei Farben (0..1)
+  const f = Math.min(Math.max(factor,0),1);
+  const h = hex.replace('#','');
+  const o = overlayHex.replace('#','');
+  const r = Math.round(parseInt(h.substring(0,2),16)*(1-f) + parseInt(o.substring(0,2),16)*f);
+  const g = Math.round(parseInt(h.substring(2,4),16)*(1-f) + parseInt(o.substring(2,4),16)*f);
+  const b = Math.round(parseInt(h.substring(4,6),16)*(1-f) + parseInt(o.substring(4,6),16)*f);
+  return `rgb(${r},${g},${b})`;
+}
+
 function render(){
-  heimTitle.textContent = nameHeim.value;
-  gastTitle.textContent = nameGast.value;
+  nameHeim.value && (heimTitle.textContent = nameHeim.value);
+  nameGast.value && (gastTitle.textContent = nameGast.value);
 
   ["heim","gast"].forEach(team=>{
     const div = document.getElementById(team+"Players");
     div.innerHTML = "";
-
-    players.filter(p=>p.team===team).forEach(p=>{
-      const el = document.createElement("div");
-      el.className = "player";
-      el.textContent = `#${p.num}\n${p.pts}`;
-      if(active[team].includes(p.num)) el.classList.add("active");
-      el.onclick = ()=>toggle(team, p.num);
-      div.appendChild(el);
-    });
+    const baseColor = team==="heim" ? heimColorInput.value : gastColorInput.value;
 
     const sum = active[team]
       .map(n=>players.find(p=>p.num==n)?.pts || 0)
       .reduce((a,b)=>a+b,0);
+
+    // Dynamischer Hintergrund: grün wenn ok, rot wenn zu hoch
+    const overlay = sum<=14.5 ? "#a4d6a7" : "#f7a1a1";
+    div.parentElement.style.background = blendColors(baseColor, overlay, 0.4);
+
+    players.filter(p=>p.team===team).forEach(p=>{
+      const el = document.createElement("div");
+      el.className = "player";
+      el.innerHTML = `#${p.num}<br>${p.pts} <span class="remove" onclick="removePlayer(${p.num},'${team}')">×</span>`;
+      if(active[team].includes(p.num)) el.classList.add("active");
+      el.onclick = (e)=>{
+        if(!e.target.classList.contains("remove")) toggle(team, p.num);
+      };
+      div.appendChild(el);
+    });
 
     const st = document.getElementById(team+"Status");
     st.textContent = "Punkte: " + sum.toFixed(1);
