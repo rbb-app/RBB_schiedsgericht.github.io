@@ -3,8 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <base href="/RBB_Scores/">
+
 <meta name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1">
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover,
+               user-scalable=no, maximum-scale=1">
+
 <title>RBB Scores</title>
 
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -22,8 +25,9 @@
   :root{--bg:#121212;--fg:#fff;--card:#1e1e1e;}
 }
 body{
-  margin:0;padding:12px;
-  font-family:Arial;
+  margin:0;
+  padding:12px;
+  font-family:Arial,Helvetica,sans-serif;
   background:var(--bg);
   color:var(--fg);
 }
@@ -33,6 +37,16 @@ button,input,select{
 }
 h3{text-align:center;margin:8px 0;}
 .hidden{display:none;}
+
+#appHeader{
+  text-align:center;
+  margin-bottom:10px;
+}
+#appHeader img{
+  width:96px;
+  height:96px;
+  border-radius:20%;
+}
 
 .container{display:flex;gap:10px;flex-wrap:wrap;}
 .team{
@@ -46,7 +60,12 @@ h3{text-align:center;margin:8px 0;}
 .team.ok{background:var(--ok);}
 .team.fail{background:var(--fail);}
 
-.players{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;}
+.players{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  justify-content:center;
+}
 .player{
   position:relative;
   min-width:60px;
@@ -54,14 +73,17 @@ h3{text-align:center;margin:8px 0;}
   border:2px solid #666;
   border-radius:8px;
   text-align:center;
+  cursor:pointer;
 }
 .player.active{background:rgba(0,255,0,.25);}
 .remove{
   position:absolute;
-  top:2px;right:4px;
-  color:red;font-weight:bold;
+  top:2px; right:4px;
+  color:red;
+  font-weight:bold;
   cursor:pointer;
 }
+
 .bonus{
   position:absolute;
   font-size:10px;
@@ -80,8 +102,22 @@ h3{text-align:center;margin:8px 0;}
   align-items:center;
   flex-wrap:wrap;
 }
-.input-line input[type=number]{width:55px;text-align:center;}
-.bonus-toggle{font-size:11px;padding:4px 6px;}
+.input-line input[type=number]{
+  width:55px;
+  text-align:center;
+}
+
+/* Bonus buttons */
+.bonus-btn{
+  border:1px solid #666;
+  border-radius:6px;
+  padding:4px 8px;
+  font-size:11px;
+  opacity:.4;
+}
+.bonus-btn.jb{background:#3f51b5;color:#fff;}
+.bonus-btn.fb{background:#e91e63;color:#fff;}
+.bonus-btn.active{opacity:1;}
 
 .periods{
   margin-top:env(safe-area-inset-top);
@@ -97,15 +133,24 @@ h3{text-align:center;margin:8px 0;}
 }
 .periods .active{background:#4caf50;color:#fff;}
 
-.status{text-align:center;font-weight:bold;margin-top:6px;}
+.status{
+  text-align:center;
+  font-weight:bold;
+  margin-top:6px;
+}
 .fail-text{color:#f44336;}
 </style>
 </head>
 
 <body>
 
-<!-- SETUP -->
+<!-- SETUP VIEW -->
 <div id="setupView">
+
+  <div id="appHeader">
+    <img src="icon.png" alt="RBB Scores">
+  </div>
+
   <h3>Setup</h3>
 
   <div style="text-align:center">
@@ -114,12 +159,14 @@ h3{text-align:center;margin:8px 0;}
   </div>
 
   <h3>Add Player</h3>
+
   <div class="input-line">
     No <input id="num" type="number">
     Pts <input id="pts" type="number" step="0.5">
-    <button class="bonus-toggle" id="jbBtn">JB</button>
-    <button class="bonus-toggle" id="fbBtn">FB</button>
+    <button id="jbBtn" class="bonus-btn jb">JB</button>
+    <button id="fbBtn" class="bonus-btn fb">FB</button>
   </div>
+
   <div class="input-line">
     <select id="teamSelect">
       <option value="heim">Home</option>
@@ -144,8 +191,9 @@ h3{text-align:center;margin:8px 0;}
   </div>
 </div>
 
-<!-- GAME -->
+<!-- GAME VIEW -->
 <div id="gameView" class="hidden">
+
   <div class="periods" id="periods">
     <div data-p="Q1">Q1</div>
     <div data-p="Q2">Q2</div>
@@ -159,8 +207,8 @@ h3{text-align:center;margin:8px 0;}
       <h3 id="heimTitle"></h3>
       <div id="heimPlayers" class="players"></div>
       <div id="heimActions" class="hidden">
-        <button onclick="confirm('heim')">Confirm</button>
-        <button onclick="undo('heim')">Undo</button>
+        <button onclick="confirmChange('heim')">Confirm</button>
+        <button onclick="undoChange('heim')">Undo</button>
       </div>
       <div id="heimStatus" class="status"></div>
     </div>
@@ -169,8 +217,8 @@ h3{text-align:center;margin:8px 0;}
       <h3 id="gastTitle"></h3>
       <div id="gastPlayers" class="players"></div>
       <div id="gastActions" class="hidden">
-        <button onclick="confirm('gast')">Confirm</button>
-        <button onclick="undo('gast')">Undo</button>
+        <button onclick="confirmChange('gast')">Confirm</button>
+        <button onclick="undoChange('gast')">Undo</button>
       </div>
       <div id="gastStatus" class="status"></div>
     </div>
@@ -182,30 +230,46 @@ h3{text-align:center;margin:8px 0;}
 </div>
 
 <script>
-let players=[],active={heim:[],gast:[]},tempActive={heim:[],gast:[]},log=[],period="Q1";
+let players=[];
+let active={heim:[],gast:[]};
+let tempActive={heim:[],gast:[]};
+let log=[];
+let period="Q1";
 let jb=false,fb=false;
 
 const vib=m=>navigator.vibrate&&navigator.vibrate(m);
 
-jbBtn.onclick=()=>{jb=!jb;jbBtn.style.opacity=jb?1:.4;}
-fbBtn.onclick=()=>{fb=!fb;fbBtn.style.opacity=fb?1:.4;}
+jbBtn.onclick=()=>{
+  jb=!jb;
+  jbBtn.classList.toggle("active",jb);
+};
+fbBtn.onclick=()=>{
+  fb=!fb;
+  fbBtn.classList.toggle("active",fb);
+};
 
 function calcPts(p){
-  let r=p;
-  if(jb&&fb) r-=2;
-  else if(jb) r-=1;
-  else if(fb) r-=1.5;
-  return r;
+  if(jb&&fb) return p-2;
+  if(jb) return p-1;
+  if(fb) return p-1.5;
+  return p;
 }
 
 function addPlayer(){
   const n=+num.value,p=+pts.value,t=teamSelect.value;
   if(!n||isNaN(p))return;
-  if(players.filter(x=>x.team===t).length>=12)return alert("Max 12 players");
-  if(players.find(x=>x.team===t&&x.num===n))return alert("Number already exists");
+  if(players.filter(x=>x.team===t).length>=12)
+    return alert("Max 12 players per team");
+  if(players.find(x=>x.team===t&&x.num===n))
+    return alert("Number already exists");
+
   players.push({num:n,pts:calcPts(p),team:t,jb,fb});
-  num.value=pts.value="";jb=fb=false;jbBtn.style.opacity=fbBtn.style.opacity=.4;
-  render();vib(10);
+  num.value=pts.value="";
+  jb=fb=false;
+  jbBtn.classList.remove("active");
+  fbBtn.classList.remove("active");
+  vib(10);
+  render();
 }
 
 function render(){
@@ -220,15 +284,16 @@ function render(){
   renderList("gast","gastPlayers",false);
 
   ["heim","gast"].forEach(t=>{
-    const sum=tempActive[t].reduce((a,n)=>a+(players.find(p=>p.num===n&&p.team===t)?.pts||0),0);
+    const sum=tempActive[t].reduce((a,n)=>a+(players.find(p=>p.team===t&&p.num===n)?.pts||0),0);
     const teamDiv=document.getElementById(t+"Team");
     const st=document.getElementById(t+"Status");
     const act=document.getElementById(t+"Actions");
 
     teamDiv.className="team "+(sum<=14.5?"ok":"fail");
+
     if(JSON.stringify(active[t])!==JSON.stringify(tempActive[t])){
       act.classList.remove("hidden");
-      st.textContent="Not confirmed";
+      st.textContent="Changes not confirmed";
       st.className="status fail-text";
     }else{
       act.classList.add("hidden");
@@ -238,33 +303,45 @@ function render(){
 }
 
 function renderList(team,target,setup){
-  const d=document.getElementById(target);d.innerHTML="";
+  const d=document.getElementById(target);
+  d.innerHTML="";
   players.filter(p=>p.team===team).forEach(p=>{
     const e=document.createElement("div");
     e.className="player"+(tempActive[team].includes(p.num)?" active":"");
     e.innerHTML=`#${p.num}<br>${p.pts.toFixed(1)}`;
     if(p.fb)e.innerHTML+=`<div class="bonus fb">FB</div>`;
     if(p.jb)e.innerHTML+=`<div class="bonus jb">JB</div>`;
-    if(setup)e.innerHTML+=`<div class="remove" onclick="players=players.filter(x=>x!==p);render()">×</div>`;
-    else e.onclick=()=>toggle(team,p.num);
+    if(setup){
+      e.innerHTML+=`<div class="remove" onclick="players=players.filter(x=>x!==p);render()">×</div>`;
+    }else{
+      e.onclick=()=>toggle(team,p.num);
+    }
     d.appendChild(e);
   });
 }
 
-function toggle(t,n){
-  const l=tempActive[t],i=l.indexOf(n);
-  if(i>=0)l.splice(i,1);else if(l.length<5)l.push(n);
-  vib(15);render();
+function toggle(team,num){
+  const l=tempActive[team];
+  const i=l.indexOf(num);
+  if(i>=0)l.splice(i,1);
+  else if(l.length<5)l.push(num);
+  vib(15);
+  render();
 }
 
-function confirm(t){
-  const sum=tempActive[t].reduce((a,n)=>a+(players.find(p=>p.num===n&&p.team===t)?.pts||0),0);
+function confirmChange(team){
+  const sum=tempActive[team].reduce((a,n)=>a+(players.find(p=>p.team===team&&p.num===n)?.pts||0),0);
   if(sum>14.5)return alert(">14.5 pts not allowed");
-  active[t]=[...tempActive[t]];
-  log.push({time:new Date().toLocaleTimeString(),period,team:t,lineup:[...active[t]],points:sum});
-  vib(30);render();
+  active[team]=[...tempActive[team]];
+  log.push({time:new Date().toLocaleTimeString(),period,team,lineup:[...active[team]],points:sum});
+  vib(30);
+  render();
 }
-function undo(t){tempActive[t]=[...active[t]];render();}
+
+function undoChange(team){
+  tempActive[team]=[...active[team]];
+  render();
+}
 
 function startGame(){
   tempActive={heim:[...active.heim],gast:[...active.gast]};
@@ -275,15 +352,23 @@ function startGame(){
 
 function endGame(){
   let csv="Time;Period;Team;Players;Points\n";
-  log.forEach(l=>csv+=`${l.time};${l.period};${l.team};${l.lineup};${l.points}\n`);
+  log.forEach(l=>{
+    csv+=`${l.time};${l.period};${l.team};${l.lineup.join(",")};${l.points}\n`;
+  });
   const a=document.createElement("a");
-  a.href=URL.createObjectURL(new Blob([csv]));
-  a.download="history.csv";a.click();
-  localStorage.clear();location.reload();
+  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  a.download="history.csv";
+  a.click();
+  localStorage.clear();
+  location.reload();
 }
 
 document.querySelectorAll(".periods div").forEach(d=>{
-  d.onclick=()=>{period=d.dataset.p;render();}
+  d.onclick=()=>{
+    period=d.dataset.p;
+    document.querySelectorAll(".periods div").forEach(x=>x.classList.remove("active"));
+    d.classList.add("active");
+  };
 });
 
 render();
