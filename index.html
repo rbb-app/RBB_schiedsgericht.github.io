@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <base href="/RBB_Scores/">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1">
 <title>RBB Scores</title>
 
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,93 +13,119 @@
 <link rel="manifest" href="manifest.json">
 
 <style>
-:root { --bg:#fff; --fg:#000; --card:#f2f2f2; }
-@media (prefers-color-scheme: dark){
-  :root { --bg:#121212; --fg:#fff; --card:#1e1e1e; }
+:root{
+  --bg:#fff; --fg:#000; --card:#f2f2f2;
+  --ok:rgba(76,175,80,.18);
+  --fail:rgba(244,67,54,.18);
 }
-body{ font-family:Arial; margin:0; padding:10px; background:var(--bg); color:var(--fg); }
+@media(prefers-color-scheme:dark){
+  :root{--bg:#121212;--fg:#fff;--card:#1e1e1e;}
+}
+body{
+  margin:0;padding:12px;
+  font-family:Arial;
+  background:var(--bg);
+  color:var(--fg);
+}
+button,input,select{
+  font-size:14px;
+  padding:6px;
+}
+h3{text-align:center;margin:8px 0;}
+.hidden{display:none;}
 
-.app-icon-large{ display:block; margin:20px auto; width:120px; height:120px; }
+.container{display:flex;gap:10px;flex-wrap:wrap;}
+.team{
+  flex:1;
+  background:var(--card);
+  border-radius:10px;
+  padding:10px;
+  min-width:150px;
+  transition:.3s;
+}
+.team.ok{background:var(--ok);}
+.team.fail{background:var(--fail);}
 
-.input-row{ display:flex; flex-direction:column; align-items:center; gap:4px; margin-bottom:10px; }
-.input-top{ display:flex; gap:4px; align-items:center; flex-wrap:wrap; justify-content:center; }
-.input-bottom{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:center; }
-
-.bonus-toggle{
-  display:inline-block;
-  padding:4px 6px;
-  border-radius:6px;
-  font-size:0.75em;
-  cursor:pointer;
-  border:1px solid #666;
-  user-select:none;
-  min-width:30px;
+.players{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;}
+.player{
+  position:relative;
+  min-width:60px;
+  padding:8px;
+  border:2px solid #666;
+  border-radius:8px;
   text-align:center;
-  margin:1px;
 }
-.bonus-toggle.jb{ background:#e0ffe0; color:#4caf50; }
-.bonus-toggle.jb.active{ background:#4caf50; color:#fff; }
-.bonus-toggle.fb{ background:#ffe0f0; color:#e91e63; }
-.bonus-toggle.fb.active{ background:#e91e63; color:#fff; }
+.player.active{background:rgba(0,255,0,.25);}
+.remove{
+  position:absolute;
+  top:2px;right:4px;
+  color:red;font-weight:bold;
+  cursor:pointer;
+}
+.bonus{
+  position:absolute;
+  font-size:10px;
+  font-weight:bold;
+  padding:2px 4px;
+  border-radius:4px;
+  color:#fff;
+}
+.fb{top:2px;left:2px;background:#e91e63;}
+.jb{bottom:2px;left:2px;background:#3f51b5;}
 
-input, select, button{padding:6px; font-size:14px; margin:4px;}
-input[type=number]{ width:50px; text-align:center; }
-button{ cursor:pointer; }
+.input-line{
+  display:flex;
+  gap:6px;
+  justify-content:center;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.input-line input[type=number]{width:55px;text-align:center;}
+.bonus-toggle{font-size:11px;padding:4px 6px;}
 
-.container{display:flex;gap:10px;flex-wrap:wrap; position:relative;}
-.team{ flex:1; background:var(--card); border-radius:10px; padding:10px; min-width:150px; transition: background 0.3s; }
-.team.ok-bg{ background: rgba(76,175,80,0.15); }
-.team.fail-bg{ background: rgba(244,67,54,0.15); }
-
-.players{display:flex;flex-wrap:wrap;gap:6px;justify-content:center; position:relative;}
-.player{ padding:10px; border:3px solid #666; border-radius:10px; min-width:60px; text-align:center; cursor:pointer; position:relative;}
-.player.active{ background: rgba(0,255,0,0.25); }
-.player .remove{ position:absolute; top:2px; right:4px; color:red; font-weight:bold; cursor:pointer; }
-
-.player .bonus { position: absolute; font-size:0.7em; font-weight:bold; padding:1px 4px; border-radius:4px; pointer-events:none; }
-.player .bonus.fb { top:2px; left:2px; background:#e91e63; color:#fff; }
-.player .bonus.jb { bottom:2px; left:2px; background:#4caf50; color:#fff; }
-
-.status{ text-align:center; font-weight:bold; margin-top:6px; }
-.ok{color:#4caf50;} .fail{color:#f44336;}
-
-.periods{ display:flex; gap:4px; justify-content:center; margin-top:10px; margin-bottom:6px; flex-wrap:nowrap; }
+.periods{
+  margin-top:env(safe-area-inset-top);
+  display:flex;
+  gap:6px;
+  justify-content:center;
+}
 .periods div{
-  padding:6px 10px; border-radius:6px; border:1px solid #666; cursor:pointer;
-  min-width:40px; text-align:center; background:#f2f2f2; color:#000; user-select:none;
-  transition: background 0.2s, color 0.2s, transform 0.1s;
+  padding:6px 10px;
+  border-radius:6px;
+  border:1px solid #666;
+  cursor:pointer;
 }
-.periods div.active{ background:#4caf50; color:#fff; }
-.periods div:active{ transform: scale(0.95); }
+.periods .active{background:#4caf50;color:#fff;}
 
-#gameView { padding-top:60px; } /* Abstand Statusbar */
-
-.setup-line{ text-align:center; margin-bottom:6px; }
+.status{text-align:center;font-weight:bold;margin-top:6px;}
+.fail-text{color:#f44336;}
 </style>
 </head>
+
 <body>
 
-<!-- SETUP VIEW -->
+<!-- SETUP -->
 <div id="setupView">
-  <img src="icon.png" class="app-icon-large" alt="RBB Scores Icon">
-  <div class="setup-line">Home: <input id="nameHeim"></div>
-  <div class="setup-line">Guest: <input id="nameGast"></div>
+  <h3>Setup</h3>
+
+  <div style="text-align:center">
+    Home <input id="nameHeim" value="Home"><br>
+    Guest <input id="nameGast" value="Guest">
+  </div>
 
   <h3>Add Player</h3>
-  <div class="input-row">
-    <div class="input-top">
-      No.: <input id="num" type="number">
-      Pts: <input id="pts" type="number" step="0.5" min="-0.5" max="4.5">
-      <span id="jbToggle" class="bonus-toggle jb" onclick="toggleJB(this)">JB</span>
-      <span id="fbToggle" class="bonus-toggle fb" onclick="toggleFB(this)">FB</span>
-    </div>
-    <div class="input-bottom">
-      <select id="teamSelect">
-        <option value="heim">Home</option>
-        <option value="gast">Guest</option>
-      </select>
-      <button onclick="addPlayer()">+</button>
-    </div>
+  <div class="input-line">
+    No <input id="num" type="number">
+    Pts <input id="pts" type="number" step="0.5">
+    <button class="bonus-toggle" id="jbBtn">JB</button>
+    <button class="bonus-toggle" id="fbBtn">FB</button>
+  </div>
+  <div class="input-line">
+    <select id="teamSelect">
+      <option value="heim">Home</option>
+      <option value="gast">Guest</option>
+    </select>
+    <button onclick="addPlayer()">＋ Add</button>
   </div>
 
   <div class="container">
@@ -112,199 +139,154 @@ button{ cursor:pointer; }
     </div>
   </div>
 
-  <div style="text-align:center;margin-top:10px;">
+  <div style="text-align:center;margin-top:10px">
     <button onclick="startGame()">Start Game</button>
   </div>
 </div>
 
-<!-- GAME VIEW -->
-<div id="gameView" style="display:none; position:relative;">
+<!-- GAME -->
+<div id="gameView" class="hidden">
   <div class="periods" id="periods">
-    <div data-period="1">Q1</div>
-    <div data-period="2">Q2</div>
-    <div data-period="3">Q3</div>
-    <div data-period="4">Q4</div>
-    <div data-period="V">OT</div>
+    <div data-p="Q1">Q1</div>
+    <div data-p="Q2">Q2</div>
+    <div data-p="Q3">Q3</div>
+    <div data-p="Q4">Q4</div>
+    <div data-p="OT">OT</div>
   </div>
 
   <div class="container">
-    <div class="team">
+    <div class="team" id="heimTeam">
       <h3 id="heimTitle"></h3>
       <div id="heimPlayers" class="players"></div>
-      <div style="text-align:center; margin-top:4px;">
-        <button onclick="confirmChange('heim')">Confirm</button>
-        <button onclick="undoChange('heim')">Undo</button>
+      <div id="heimActions" class="hidden">
+        <button onclick="confirm('heim')">Confirm</button>
+        <button onclick="undo('heim')">Undo</button>
       </div>
       <div id="heimStatus" class="status"></div>
     </div>
-    <div class="team">
+
+    <div class="team" id="gastTeam">
       <h3 id="gastTitle"></h3>
       <div id="gastPlayers" class="players"></div>
-      <div style="text-align:center; margin-top:4px;">
-        <button onclick="confirmChange('gast')">Confirm</button>
-        <button onclick="undoChange('gast')">Undo</button>
+      <div id="gastActions" class="hidden">
+        <button onclick="confirm('gast')">Confirm</button>
+        <button onclick="undo('gast')">Undo</button>
       </div>
       <div id="gastStatus" class="status"></div>
     </div>
   </div>
 
-  <div style="text-align:center;margin-top:10px;">
+  <div style="text-align:center;margin-top:10px">
     <button onclick="endGame()">End Game</button>
   </div>
 </div>
 
 <script>
-let players=[], active={heim:[],gast:[]}, tempActive={heim:[],gast:[]}, log=[], currentPeriod="1", gameStarted=false;
-let jbActive=false, fbActive=false;
-const setupView=document.getElementById("setupView");
-const gameView=document.getElementById("gameView");
-const periodsDiv=document.getElementById("periods");
+let players=[],active={heim:[],gast:[]},tempActive={heim:[],gast:[]},log=[],period="Q1";
+let jb=false,fb=false;
 
-function vibrate(ms=20){ if(navigator.vibrate) navigator.vibrate(ms); }
-function toggleJB(el){ jbActive=!jbActive; el.classList.toggle("active", jbActive); }
-function toggleFB(el){ fbActive=!fbActive; el.classList.toggle("active", fbActive); }
+const vib=m=>navigator.vibrate&&navigator.vibrate(m);
 
-function setPeriod(p){ currentPeriod=p; renderPeriods(); vibrate(15); }
-function renderPeriods(){ [...periodsDiv.children].forEach(d=>d.classList.toggle("active",d.dataset.period===currentPeriod)); }
-[...periodsDiv.children].forEach(d=>d.onclick=()=>setPeriod(d.dataset.period));
+jbBtn.onclick=()=>{jb=!jb;jbBtn.style.opacity=jb?1:.4;}
+fbBtn.onclick=()=>{fb=!fb;fbBtn.style.opacity=fb?1:.4;}
 
-function saveState(){
-  localStorage.setItem("players", JSON.stringify(players));
-  localStorage.setItem("active", JSON.stringify(active));
-  localStorage.setItem("tempActive", JSON.stringify(tempActive));
-  localStorage.setItem("log", JSON.stringify(log));
-  localStorage.setItem("currentPeriod", currentPeriod);
-  localStorage.setItem("nameHeim", document.getElementById("nameHeim").value);
-  localStorage.setItem("nameGast", document.getElementById("nameGast").value);
-  localStorage.setItem("gameStarted", gameStarted?"1":"0");
-}
-
-function loadState(){
-  players = JSON.parse(localStorage.getItem("players")||"[]");
-  active = JSON.parse(localStorage.getItem("active")||'{"heim":[],"gast":[]}');
-  tempActive = JSON.parse(localStorage.getItem("tempActive")||'{"heim":[],"gast":[]}');
-  log = JSON.parse(localStorage.getItem("log")||"[]");
-  currentPeriod = localStorage.getItem("currentPeriod") || "1";
-  document.getElementById("nameHeim").value = localStorage.getItem("nameHeim") || "Home";
-  document.getElementById("nameGast").value = localStorage.getItem("nameGast") || "Guest";
-  gameStarted = localStorage.getItem("gameStarted")==="1";
-
-  if(gameStarted){ setupView.style.display="none"; gameView.style.display="block"; }
-  else{ setupView.style.display="block"; gameView.style.display="none"; }
-}
-
-function startGame(){
-  if(players.length===0) return alert("Please add players first");
-  gameStarted=true;
-  tempActive.heim=[...active.heim]; tempActive.gast=[...active.gast];
-  setupView.style.display="none"; gameView.style.display="block";
-  saveState(); render(); vibrate(50);
-}
-
-function endGame(){
-  if(!confirm("Do you really want to end the game?")) return;
-
-  // CSV export
-  let csv="Time;Period;Team;Players;Points\n";
-  log.forEach(l=>csv+=`${l.time};${l.period};${l.team};${l.lineup.join(",")};${l.points}\n`);
-  const a=document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([csv], {type:"text/csv"}));
-  a.download="substitutions.csv";
-  a.click();
-
-  // Reset everything
-  players = []; active = {heim:[],gast:[]}; tempActive={heim:[],gast:[]}; log=[]; currentPeriod="1"; gameStarted=false;
-  localStorage.clear();
-  setupView.style.display="block"; gameView.style.display="none";
-  render();
+function calcPts(p){
+  let r=p;
+  if(jb&&fb) r-=2;
+  else if(jb) r-=1;
+  else if(fb) r-=1.5;
+  return r;
 }
 
 function addPlayer(){
-  const num=+document.getElementById("num").value;
-  const pts=+document.getElementById("pts").value;
-  const team=document.getElementById("teamSelect").value;
-  if(!num||!pts) return;
-  if(players.some(p=>p.team===team && p.num===num)){ alert("This number is already taken for this team!"); return; }
-  if(players.filter(p=>p.team===team).length>=12){ alert("Max 12 players per team!"); return; }
-
-  let bonus=0; if(jbActive&&fbActive) bonus=2; else if(jbActive) bonus=1; else if(fbActive) bonus=1.5;
-  const adjustedPts=pts-bonus;
-
-  players.push({num, pts:adjustedPts, team, jb: jbActive, fb: fbActive});
-  players.sort((a,b)=>a.num-b.num);
-
-  document.getElementById("num").value=""; document.getElementById("pts").value="";
-  jbActive=false; fbActive=false;
-  document.getElementById("jbToggle").classList.remove("active"); document.getElementById("fbToggle").classList.remove("active");
-
-  saveState(); vibrate(10); render();
-}
-
-function removePlayer(num,team){
-  players=players.filter(p=>!(p.num===num && p.team===team));
-  active[team]=active[team].filter(n=>n!==num); tempActive[team]=[...active[team]];
-  saveState(); vibrate(30); render();
-}
-
-function toggle(team,num){
-  const l=tempActive[team]; const i=l.indexOf(num);
-  if(i>=0) l.splice(i,1); else if(l.length<5) l.push(num);
-  saveState(); render();
-}
-
-function confirmChange(team){
-  const sum=tempActive[team].map(n=>players.find(p=>p.num==n)?.pts||0).reduce((a,b)=>a+b,0);
-  if(sum>14.5){ alert("Cannot confirm: total points exceed 14.5!"); return; }
-  active[team] = [...tempActive[team]];
-  logChange(team); saveState(); render();
-}
-
-function undoChange(team){
-  tempActive[team] = [...active[team]]; saveState(); render();
-}
-
-function logChange(team){
-  const lineup=tempActive[team];
-  const sum=lineup.map(n=>players.find(p=>p.num==n)?.pts||0).reduce((a,b)=>a+b,0);
-  log.push({time:new Date().toLocaleTimeString(), period:currentPeriod, team:team, lineup:[...lineup], points:sum.toFixed(1)});
-}
-
-function renderPlayers(team,target,isSetup){
-  const div=document.getElementById(target); div.innerHTML="";
-  players.filter(p=>p.team===team).forEach(p=>{
-    const el=document.createElement("div"); el.className="player";
-    el.innerHTML=`<strong>#${p.num}</strong><br>${p.pts.toFixed(1)}`;
-    if(p.fb){ const b=document.createElement("div"); b.className="bonus fb"; b.textContent="FB"; el.appendChild(b);}
-    if(p.jb){ const b=document.createElement("div"); b.className="bonus jb"; b.textContent="JB"; el.appendChild(b);}
-    if(isSetup) el.innerHTML+=`<span class="remove" onclick="removePlayer(${p.num},'${team}')">×</span>`;
-    else{ if(tempActive[team].includes(p.num)) el.classList.add("active"); el.onclick=()=>toggle(team,p.num);}
-    div.appendChild(el);
-  });
+  const n=+num.value,p=+pts.value,t=teamSelect.value;
+  if(!n||isNaN(p))return;
+  if(players.filter(x=>x.team===t).length>=12)return alert("Max 12 players");
+  if(players.find(x=>x.team===t&&x.num===n))return alert("Number already exists");
+  players.push({num:n,pts:calcPts(p),team:t,jb,fb});
+  num.value=pts.value="";jb=fb=false;jbBtn.style.opacity=fbBtn.style.opacity=.4;
+  render();vib(10);
 }
 
 function render(){
-  document.getElementById("heimTitle").textContent=document.getElementById("nameHeim").value||"Home";
-  document.getElementById("gastTitle").textContent=document.getElementById("nameGast").value||"Guest";
-  document.getElementById("heimTitleSetup").textContent=document.getElementById("nameHeim").value||"Home";
-  document.getElementById("gastTitleSetup").textContent=document.getElementById("nameGast").value||"Guest";
+  heimTitle.textContent=nameHeim.value;
+  gastTitle.textContent=nameGast.value;
+  heimTitleSetup.textContent=nameHeim.value;
+  gastTitleSetup.textContent=nameGast.value;
 
-  renderPeriods();
-  renderPlayers("heim","heimPlayersSetup",true);
-  renderPlayers("gast","gastPlayersSetup",true);
-  renderPlayers("heim","heimPlayers",false);
-  renderPlayers("gast","gastPlayers",false);
+  renderList("heim","heimPlayersSetup",true);
+  renderList("gast","gastPlayersSetup",true);
+  renderList("heim","heimPlayers",false);
+  renderList("gast","gastPlayers",false);
 
-  ["heim","gast"].forEach(team=>{
-    const sum=tempActive[team].map(n=>players.find(p=>p.num==n)?.pts||0).reduce((a,b)=>a+b,0);
-    const st=document.getElementById(team+"Status"); if(!st) return;
-    st.textContent="Points: "+sum.toFixed(1);
-    if(tempActive[team].toString()!==active[team].toString()){ st.textContent += " (Not confirmed)"; }
-    st.className="status "+(sum<=14.5?"ok":"fail");
-    const tdiv=st.closest(".team"); tdiv.classList.remove("ok-bg","fail-bg"); tdiv.classList.add(sum<=14.5?"ok-bg":"fail-bg");
+  ["heim","gast"].forEach(t=>{
+    const sum=tempActive[t].reduce((a,n)=>a+(players.find(p=>p.num===n&&p.team===t)?.pts||0),0);
+    const teamDiv=document.getElementById(t+"Team");
+    const st=document.getElementById(t+"Status");
+    const act=document.getElementById(t+"Actions");
+
+    teamDiv.className="team "+(sum<=14.5?"ok":"fail");
+    if(JSON.stringify(active[t])!==JSON.stringify(tempActive[t])){
+      act.classList.remove("hidden");
+      st.textContent="Not confirmed";
+      st.className="status fail-text";
+    }else{
+      act.classList.add("hidden");
+      st.textContent="";
+    }
   });
 }
 
-loadState(); render();
+function renderList(team,target,setup){
+  const d=document.getElementById(target);d.innerHTML="";
+  players.filter(p=>p.team===team).forEach(p=>{
+    const e=document.createElement("div");
+    e.className="player"+(tempActive[team].includes(p.num)?" active":"");
+    e.innerHTML=`#${p.num}<br>${p.pts.toFixed(1)}`;
+    if(p.fb)e.innerHTML+=`<div class="bonus fb">FB</div>`;
+    if(p.jb)e.innerHTML+=`<div class="bonus jb">JB</div>`;
+    if(setup)e.innerHTML+=`<div class="remove" onclick="players=players.filter(x=>x!==p);render()">×</div>`;
+    else e.onclick=()=>toggle(team,p.num);
+    d.appendChild(e);
+  });
+}
+
+function toggle(t,n){
+  const l=tempActive[t],i=l.indexOf(n);
+  if(i>=0)l.splice(i,1);else if(l.length<5)l.push(n);
+  vib(15);render();
+}
+
+function confirm(t){
+  const sum=tempActive[t].reduce((a,n)=>a+(players.find(p=>p.num===n&&p.team===t)?.pts||0),0);
+  if(sum>14.5)return alert(">14.5 pts not allowed");
+  active[t]=[...tempActive[t]];
+  log.push({time:new Date().toLocaleTimeString(),period,team:t,lineup:[...active[t]],points:sum});
+  vib(30);render();
+}
+function undo(t){tempActive[t]=[...active[t]];render();}
+
+function startGame(){
+  tempActive={heim:[...active.heim],gast:[...active.gast]};
+  setupView.classList.add("hidden");
+  gameView.classList.remove("hidden");
+  render();
+}
+
+function endGame(){
+  let csv="Time;Period;Team;Players;Points\n";
+  log.forEach(l=>csv+=`${l.time};${l.period};${l.team};${l.lineup};${l.points}\n`);
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([csv]));
+  a.download="history.csv";a.click();
+  localStorage.clear();location.reload();
+}
+
+document.querySelectorAll(".periods div").forEach(d=>{
+  d.onclick=()=>{period=d.dataset.p;render();}
+});
+
+render();
 </script>
 </body>
 </html>
