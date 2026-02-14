@@ -9,33 +9,46 @@
 
 <title>RBB Scores</title>
 
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+
 <style>
 :root{
   --bg:#fff; --fg:#000; --card:#f2f2f2;
   --ok:rgba(76,175,80,.18);
   --fail:rgba(244,67,54,.18);
   --danger:#d32f2f;
-  --admin:#555;
 }
 @media(prefers-color-scheme:dark){
   :root{--bg:#121212;--fg:#fff;--card:#1e1e1e;}
 }
-body{
-  margin:0;padding:12px;
-  font-family:Arial,Helvetica,sans-serif;
-  background:var(--bg);color:var(--fg);
-}
+body{margin:0;padding:12px;font-family:Arial;background:var(--bg);color:var(--fg);}
 button,input,select{font-size:14px;padding:6px;}
-h3{text-align:center;margin:8px 0;}
 .hidden{display:none;}
 
+#appHeader{text-align:center;margin-bottom:10px;}
+#appHeader img{width:96px;height:96px;border-radius:20%;}
+
 .container{display:flex;gap:10px;flex-wrap:wrap;}
-.team{flex:1;background:var(--card);border-radius:10px;padding:10px;min-width:150px;}
+.team{flex:1;background:var(--card);border-radius:10px;padding:10px;min-width:150px;transition:.3s;}
+.team.ok{background:var(--ok);}
+.team.fail{background:var(--fail);}
 
 .players{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;}
 .player{position:relative;min-width:60px;padding:8px;border:2px solid #666;border-radius:8px;text-align:center;cursor:pointer;}
 .player.active{background:rgba(0,255,0,.25);}
 .remove{position:absolute;top:2px;right:4px;color:red;font-weight:bold;cursor:pointer;}
+
+.bonus{position:absolute;font-size:10px;font-weight:bold;padding:2px 4px;border-radius:4px;color:#fff;}
+.fb{top:2px;left:2px;background:#e91e63;}
+.jb{bottom:2px;left:2px;background:#3f51b5;}
+
+.bonus-btn{border:1px solid #666;border-radius:6px;padding:4px 8px;font-size:11px;opacity:.4;cursor:pointer;}
+.bonus-btn.jb{background:#3f51b5;color:#fff;}
+.bonus-btn.fb{background:#e91e63;color:#fff;}
+.bonus-btn.active{opacity:1;}
 
 .periods{display:flex;gap:6px;justify-content:center;margin:10px 0;}
 .periods div{padding:6px 8px;border-radius:6px;border:1px solid #666;cursor:pointer;}
@@ -49,13 +62,6 @@ h3{text-align:center;margin:8px 0;}
   padding:10px 16px;font-weight:bold;
   cursor:pointer;
 }
-
-.admin-btn{
-  background:var(--admin);
-  color:#fff;border:none;border-radius:8px;
-  padding:8px 12px;
-  cursor:pointer;
-}
 </style>
 </head>
 
@@ -63,13 +69,20 @@ h3{text-align:center;margin:8px 0;}
 
 <!-- ================= SETUP VIEW ================= -->
 <div id="setupView">
-<h3>Setup</h3>
+
+<div id="appHeader">
+<img src="icon.png" alt="RBB Scores">
+</div>
+
+<h3 style="text-align:center;">Setup</h3>
+
 <div style="text-align:center">
 Home <input id="nameHeim" value="Home"><br>
 Guest <input id="nameGast" value="Guest">
 </div>
 
-<h3>Add Player</h3>
+<h3 style="text-align:center;">Add Player</h3>
+
 <div style="text-align:center;margin-bottom:8px;">
 No <input id="num" type="number">
 
@@ -85,6 +98,9 @@ Pts
 <option value="4.0">4.0</option>
 <option value="4.5">4.5</option>
 </select>
+
+<button id="jbBtn" class="bonus-btn jb">JB</button>
+<button id="fbBtn" class="bonus-btn fb">FB</button>
 
 <select id="teamSelect">
 <option value="heim">Home</option>
@@ -108,6 +124,7 @@ Pts
 <div style="text-align:center;margin-top:10px">
 <button onclick="startGame()">Start Game View</button>
 </div>
+
 </div>
 
 <!-- ================= GAME VIEW ================= -->
@@ -129,13 +146,24 @@ Pts
 </div>
 
 <div class="container">
-<div class="team">
+<div class="team" id="heimTeam">
 <h3 id="heimTitle"></h3>
 <div id="heimPlayers" class="players"></div>
+<div id="heimActions" class="hidden">
+<button onclick="confirmChange('heim')">Confirm</button>
+<button onclick="undoChange('heim')">Undo</button>
 </div>
-<div class="team">
+<div id="heimStatus" class="status"></div>
+</div>
+
+<div class="team" id="gastTeam">
 <h3 id="gastTitle"></h3>
 <div id="gastPlayers" class="players"></div>
+<div id="gastActions" class="hidden">
+<button onclick="confirmChange('gast')">Confirm</button>
+<button onclick="undoChange('gast')">Undo</button>
+</div>
+<div id="gastStatus" class="status"></div>
 </div>
 </div>
 
@@ -144,7 +172,7 @@ Pts
 </div>
 
 <div style="text-align:center;margin-top:10px">
-<button class="admin-btn" onclick="adminReset()">Admin Reset</button>
+<button onclick="adminReset()">Admin Reset</button>
 </div>
 
 </div>
@@ -156,14 +184,31 @@ let tempActive={heim:[],gast:[]};
 let log=[];
 let period="Q1";
 let gameRunning=false;
+let jb=false,fb=false;
+
+const jbBtn=document.getElementById("jbBtn");
+const fbBtn=document.getElementById("fbBtn");
+
+jbBtn.onclick=()=>{jb=!jb;jbBtn.classList.toggle("active",jb);};
+fbBtn.onclick=()=>{fb=!fb;fbBtn.classList.toggle("active",fb);};
+
+function calcPts(p){
+if(jb&&fb) return p-2;
+if(jb) return p-1;
+if(fb) return p-1.5;
+return p;
+}
 
 function addPlayer(){
 const n=+num.value;
 const p=parseFloat(pts.value);
 const t=teamSelect.value;
 if(!n||isNaN(p))return;
-players.push({num:n,pts:p,team:t});
+players.push({num:n,pts:calcPts(p),team:t,jb,fb});
 num.value="";pts.value="";
+jb=fb=false;
+jbBtn.classList.remove("active");
+fbBtn.classList.remove("active");
 render();
 }
 
@@ -185,6 +230,8 @@ players.filter(p=>p.team===team).forEach(p=>{
 const e=document.createElement("div");
 e.className="player";
 e.innerHTML=`#${p.num}<br>${p.pts.toFixed(1)}`;
+if(p.fb) e.innerHTML+=`<div class="bonus fb">FB</div>`;
+if(p.jb) e.innerHTML+=`<div class="bonus jb">JB</div>`;
 if(setup) e.innerHTML+=`<div class="remove" onclick="removePlayer(${p.num},'${p.team}')">×</div>`;
 d.appendChild(e);
 });
@@ -229,22 +276,11 @@ endQuarterBtn.classList.remove("hidden");
 
 function adminReset(){
 if(!confirm("Return to setup without deleting players?")) return;
-
 gameRunning=false;
 period="Q1";
 active={heim:[],gast:[]};
 tempActive={heim:[],gast:[]};
 log=[];
-
-document.querySelectorAll(".periods div").forEach(d=>{
-d.classList.toggle("active", d.dataset.p==="Q1");
-});
-
-gameStatus.innerHTML="<strong>Game not started</strong>";
-realStartBtn.classList.remove("hidden");
-endQuarterBtn.classList.add("hidden");
-nextQuarterBtn.classList.add("hidden");
-
 gameView.classList.add("hidden");
 setupView.classList.remove("hidden");
 }
